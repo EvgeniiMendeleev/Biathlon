@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/img">
+        <file>aim.jpg</file>
+        <file>MainPicture.jpg</file>
+        <file>WaitingOfConnection.jpg</file>
+    </qresource>
+</RCC>
