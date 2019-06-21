@@ -8,23 +8,25 @@
 #include <iostream>
 #include <clocale>
 #include <fcntl.h>
+#include <time.h>
+#include <chrono>
+
+#define TimeOfGame 60
 
 using namespace std;
 
-enum states {WaitingOfConnection, Win, Lose, Combat};
+enum states {WaitingOfConnection, WaitingOfCombat, Win, Lose, Combat};
 enum Msg_type {result_of_shot, state_for_client};
 enum ResultOfShot {not_hit, hit};
 
-struct Shot
+struct ResultOfBung
 {
-	int16_t PosX;
-	int16_t PosY;
+	int16_t type = static_cast<int16_t>(result_of_shot);
+	int16_t result;
 };
 
-struct Message
+struct Shot
 {
-	int16_t type;
-	int16_t Result;
 	int16_t PosX;
 	int16_t PosY;
 };
@@ -35,19 +37,55 @@ struct StateForClient
 	int16_t state;
 };
 
+long start;
 int FirstPlayer, SecondPlayer;
+int ScoreOfFP, ScoreOfSP;
 states stateOfFirstPlayer = WaitingOfConnection, stateOfSecondPlayer = WaitingOfConnection;
+
+struct Threads
+{
+	pthread_t* firstThread;
+	pthread_t* secondThread;
+};
+
+void* Timer(void* AllThreads)
+{
+	Threads* GameThreads = static_cast<Threads*>(AllThreads);
+
+	while(time(NULL) <= start + TimeOfGame);
+
+	cout << "Время вышло" << endl;
+
+	pthread_cancel(*GameThreads->firstThread);
+	pthread_cancel(*GameThreads->secondThread);
+
+	pthread_exit(0);
+}
 
 void* DataFromFirstClient(void* NullData)
 {
-	while(1);
-	pthread_exit(0);
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+
+	StateForClient State;
+	State.state = static_cast<int16_t>(Combat);
+	send(FirstPlayer, &State, sizeof(State), MSG_NOSIGNAL);
+
+	while(1)
+	{
+	}
 }
 
 void* DataFromSecondClient(void* NullData)
 {
-	while(1);
-	pthread_exit(0);
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+
+	StateForClient State;
+	State.state = static_cast<int16_t>(Combat);
+	send(SecondPlayer, &State, sizeof(State), MSG_NOSIGNAL);
+
+	while(1)
+	{
+	}
 }
 
 int main()
@@ -94,7 +132,7 @@ int main()
 	{
 		printf("Второй игрок подключился!\n");
 		
-		stateOfFirstPlayer = stateOfSecondPlayer = Combat;
+		stateOfFirstPlayer = stateOfSecondPlayer = WaitingOfCombat;
 		
 		stateFP.state = stateOfFirstPlayer;
 		stateSP.state = stateOfSecondPlayer;
@@ -113,15 +151,28 @@ int main()
 
 	//----------------------Процесс игры----------------------
 	void* Null = NULL;
-	
-	pthread_t FirstThread, SecondThread;
+
+	sleep(3);
+
+	pthread_t FirstThread, SecondThread, TimerThread;
+
+	Threads MyThreads;
+
+	MyThreads.firstThread = &FirstThread;
+	MyThreads.secondThread = &SecondThread;
+
+	start = time(NULL);
 
 	pthread_create(&FirstThread, 0, DataFromFirstClient, Null);
 	pthread_create(&SecondThread, 0, DataFromSecondClient, Null);
+	pthread_create(&TimerThread, 0, Timer, &MyThreads);
 
-	pthread_join(FirstThread, 0);
-	pthread_join(SecondThread, 0);
+	pthread_join(TimerThread, 0);
 	//--------------------------------------------------------
+
+	shutdown(MasterSocket, SHUT_RDWR);
+	close(MasterSocket);
+	cout << "Игра завершилась" << endl;
 
 	return 0;
 }
