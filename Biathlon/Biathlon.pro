@@ -13,9 +13,11 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    areaforshot.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h \
+    areaforshot.h
 
 FORMS    += mainwindow.ui
 

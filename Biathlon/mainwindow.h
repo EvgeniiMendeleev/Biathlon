@@ -9,6 +9,7 @@
 #include <QGraphicsScene>
 
 #include <unistd.h>
+#include <areaforshot.h>
 
 //-------------Работа с сетью---------
 #include <sys/types.h>
@@ -22,14 +23,34 @@ namespace Ui {
 class MainWindow;
 }
 
+struct CoorOfTarget
+{
+    int16_t type;
+    int16_t PosX;
+    int16_t PosY;
+};
+
+struct ResultOfBung
+{
+    int16_t type;
+    int16_t result;
+};
+
+struct Shot
+{
+    int16_t PosX;
+    int16_t PosY;
+};
+
 struct StateForClient
 {
     int16_t type;
     int16_t state;
 };
 
-enum States {WaitingOfConnection, Win, Lose, Combat};
-enum Msg_type {result_of_shot, state_for_client};
+enum States {WaitingOfConnection, WaitingOfCombat, Win, Lose, Combat};
+enum Msg_type {result_of_shot, state_for_client, coor_of_taget};
+enum ResultOfShot {not_hit, hit};
 
 class MainWindow : public QMainWindow
 {
@@ -40,15 +61,15 @@ public:
     ~MainWindow();
 
     void Main_Menu_off();
-    void BATTLE();
 
 private slots:
     void on_Connection_clicked();
+    void SendFire(int16_t x, int16_t y);
     void ReadFromServer();
 
 private:
-    Ui::MainWindow *ui;
 
+    Ui::MainWindow *ui;
     QGraphicsScene* scene;
     QTimer* MyTimer;
 

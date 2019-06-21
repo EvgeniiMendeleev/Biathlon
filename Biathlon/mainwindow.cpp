@@ -67,7 +67,7 @@ void MainWindow::on_Connection_clicked()
     }
 }
 
-void MainWindow::BATTLE()
+void MainWindow::SendFire(int16_t x, int16_t y)
 {
 
 }
@@ -86,6 +86,7 @@ void MainWindow::ReadFromServer()
 
            States state = static_cast<States>(buffer[1]);
 
+           qDebug() << "state = " << state;
            if(state == WaitingOfConnection)
            {
                Main_Menu_off();
@@ -99,9 +100,36 @@ void MainWindow::ReadFromServer()
                ui->Frame->setScene(scene);
                ui->Frame->show();
            }
+           else if(state == WaitingOfCombat)
+           {
+               Main_Menu_off();
+
+               QPixmap frame;
+
+               frame.load(":/img/WaitingOfCombat.jpg");
+               frame = frame.scaled(WidthOfFrame, HeightOfFrame);
+               scene->addPixmap(frame);
+
+               ui->Frame->setScene(scene);
+               ui->Frame->show();
+           }
            else if(state == Combat)
            {
                qDebug() << "It's a BATTLE, baby!\n";
+               QPixmap frame;
+
+               frame.load(":/img/BattleArea.jpg");
+               frame = frame.scaled(WidthOfFrame, HeightOfFrame);
+               scene->addPixmap(frame);
+
+               AreaForShot* area = new AreaForShot;
+               area->setPos(0, 0);
+               connect(area, &AreaForShot::fire, this, &MainWindow::SendFire);
+               scene->addItem(area);
+
+               ui->Frame->setScene(scene);
+               ui->Frame->show();
+
            }
            else if(state == Win)
            {
@@ -113,6 +141,10 @@ void MainWindow::ReadFromServer()
            }
        }
        else if(type == result_of_shot)
+       {
+           recv(ClientSocket, &buffer[1], sizeof(int16_t), MSG_NOSIGNAL);
+       }
+       else if(type == coor_of_taget)
        {
 
        }
