@@ -48,7 +48,7 @@ struct StateForClient
     int16_t state;
 };
 
-enum States {WaitingOfConnection, WaitingOfCombat, Win, Lose, Combat};
+enum States {WaitingOfConnection, WaitingOfCombat, Win, Lose, Combat, DeadHeat};
 enum Msg_type {result_of_shot, state_for_client, coor_of_taget};
 enum ResultOfShot {not_hit, hit};
 
@@ -69,8 +69,9 @@ private slots:
 
 private:
 
-    Ui::MainWindow *ui;
+    Ui::MainWindow* ui;
     QGraphicsScene* scene;
+    QGraphicsPixmapItem* Target;
     QTimer* MyTimer;
 
     int ClientSocket;

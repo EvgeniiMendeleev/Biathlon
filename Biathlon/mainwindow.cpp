@@ -69,12 +69,17 @@ void MainWindow::on_Connection_clicked()
 
 void MainWindow::SendFire(int16_t x, int16_t y)
 {
+    Shot ShotForServer;
 
+    ShotForServer.PosX = x;
+    ShotForServer.PosY = y;
+
+    send(ClientSocket, &ShotForServer, sizeof(Shot), MSG_NOSIGNAL);
 }
 
 void MainWindow::ReadFromServer()
 {
-    int16_t buffer[2];
+    int16_t buffer[3];
 
     if(recv(ClientSocket, &buffer, sizeof(int16_t), MSG_NOSIGNAL) > 0)
     {
@@ -133,20 +138,49 @@ void MainWindow::ReadFromServer()
            }
            else if(state == Win)
            {
-
+               qDebug() << "Я выиграл";
            }
            else if(state == Lose)
            {
-
+               qDebug() << "Блiн, проiграл";
+           }
+           else if(state == DeadHeat)
+           {
+               qDebug() << "Ничья";
            }
        }
        else if(type == result_of_shot)
        {
            recv(ClientSocket, &buffer[1], sizeof(int16_t), MSG_NOSIGNAL);
+
+           ResultOfShot result = static_cast<ResultOfShot>(buffer[1]);
+
+           if(result == hit)
+           {
+               qDebug() << "Я попал!";
+           }
+           else if(result == not_hit)
+           {
+               qDebug() << "Молоко!";
+           }
+
+           delete Target;
        }
        else if(type == coor_of_taget)
        {
+           recv(ClientSocket, &buffer[1], 2 * sizeof(int16_t), MSG_NOSIGNAL);
 
+           qDebug() << "PosX = " << buffer[1];
+           qDebug() << "PosY = " << buffer[2];
+
+           QPixmap target;
+
+           target.load(":/img/Target.jpg");
+           target = target.scaled(100, 100);
+
+           Target = scene->addPixmap(target);
+
+           Target->setPos(buffer[1], buffer[2]);
        }
     }
 }
