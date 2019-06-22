@@ -9,20 +9,30 @@
 #include <clocale>
 #include <fcntl.h>
 #include <time.h>
-#include <chrono>
+#include <cmath>
 
-#define TimeOfGame 60
+#define TimeOfGame 30
+#define MaxX 480
+#define MaxY 315
+#define Radius 50
 
 using namespace std;
 
-enum states {WaitingOfConnection, WaitingOfCombat, Win, Lose, Combat};
-enum Msg_type {result_of_shot, state_for_client};
+enum states {WaitingOfConnection, WaitingOfCombat, Win, Lose, Combat, DeadHeat};
+enum Msg_type {result_of_shot, state_for_client, coor_for_target};
 enum ResultOfShot {not_hit, hit};
 
 struct ResultOfBung
 {
 	int16_t type = static_cast<int16_t>(result_of_shot);
 	int16_t result;
+};
+
+struct Message
+{
+	int16_t type = static_cast<int16_t>(coor_for_target);
+	int16_t PosX;
+	int16_t PosY;
 };
 
 struct Shot
@@ -39,7 +49,7 @@ struct StateForClient
 
 long start;
 int FirstPlayer, SecondPlayer;
-int ScoreOfFP, ScoreOfSP;
+int ScoreOfFP = 0, ScoreOfSP = 0;
 states stateOfFirstPlayer = WaitingOfConnection, stateOfSecondPlayer = WaitingOfConnection;
 
 struct Threads
@@ -59,6 +69,28 @@ void* Timer(void* AllThreads)
 	pthread_cancel(*GameThreads->firstThread);
 	pthread_cancel(*GameThreads->secondThread);
 
+	sleep(3);
+
+	StateForClient stateForFP, stateForSP;
+
+	if(ScoreOfFP > ScoreOfSP)
+	{
+		stateForFP.state = static_cast<int16_t>(Win);
+		stateForSP.state = static_cast<int16_t>(Lose);
+	}
+	else if(ScoreOfFP < ScoreOfSP)
+	{
+		stateForFP.state = static_cast<int16_t>(Lose);
+		stateForSP.state = static_cast<int16_t>(Win);
+	}
+	else if(ScoreOfFP == ScoreOfSP)
+	{
+		stateForFP.state = stateForSP.state = static_cast<int16_t>(DeadHeat);
+	}
+
+	send(FirstPlayer, &stateForFP, sizeof(StateForClient), MSG_NOSIGNAL);
+	send(SecondPlayer, &stateForSP, sizeof(StateForClient), MSG_NOSIGNAL);
+
 	pthread_exit(0);
 }
 
@@ -72,6 +104,38 @@ void* DataFromFirstClient(void* NullData)
 
 	while(1)
 	{
+		cout << "ScoreFP = " << ScoreOfFP << endl;
+		Message CoorForTarget;
+
+		CoorForTarget.PosX = rand() % MaxX;
+		CoorForTarget.PosY = rand() % MaxY;
+
+		cout << "x1 = " << CoorForTarget.PosX << ", y1 = " << CoorForTarget.PosY << endl;
+
+		send(FirstPlayer, &CoorForTarget, sizeof(CoorForTarget), MSG_NOSIGNAL);
+
+		Shot PlayerShot;
+		recv(FirstPlayer, &PlayerShot, sizeof(Shot), MSG_NOSIGNAL);
+
+		cout << "X1 = " << PlayerShot.PosX << ", Y1 = " << PlayerShot.PosY << endl;
+
+		int x2 = (PlayerShot.PosX - (CoorForTarget.PosX + Radius)) * (PlayerShot.PosX - (CoorForTarget.PosX + Radius));
+		int y2 = (PlayerShot.PosY - (CoorForTarget.PosY + Radius)) * (PlayerShot.PosY - (CoorForTarget.PosY + Radius));
+
+		ResultOfBung Result;
+
+		if(sqrt(x2 + y2) < Radius)
+		{
+			Result.result = static_cast<int16_t>(hit);
+			send(FirstPlayer, &Result, sizeof(ResultOfBung), MSG_NOSIGNAL);
+
+			++ScoreOfFP;
+		}
+		else
+		{
+			Result.result = static_cast<int16_t>(not_hit);
+			send(FirstPlayer, &Result, sizeof(ResultOfBung), MSG_NOSIGNAL);
+		}
 	}
 }
 
@@ -85,6 +149,38 @@ void* DataFromSecondClient(void* NullData)
 
 	while(1)
 	{
+		cout << "ScoreSP = " << ScoreOfSP << endl;
+ 		Message CoorForTarget;
+
+                CoorForTarget.PosX = rand() % MaxX;
+                CoorForTarget.PosY = rand() % MaxY;
+
+                send(SecondPlayer, &CoorForTarget, sizeof(CoorForTarget), MSG_NOSIGNAL);
+
+                cout << "x2 = " << CoorForTarget.PosX << ", y2 = " << CoorForTarget.PosY << endl;
+
+		Shot PlayerShot;
+		recv(SecondPlayer, &PlayerShot, sizeof(Shot), MSG_NOSIGNAL);
+
+		cout << "X2 = " << PlayerShot.PosX << ", Y2 = " << PlayerShot.PosY << endl;
+
+                int x2 = (PlayerShot.PosX - (CoorForTarget.PosX + Radius)) * (PlayerShot.PosX - (CoorForTarget.PosX + Radius));
+                int y2 = (PlayerShot.PosY - (CoorForTarget.PosY + Radius)) * (PlayerShot.PosY - (CoorForTarget.PosY + Radius));
+
+                ResultOfBung Result;
+
+                if(sqrt(x2 + y2) < Radius)
+                {
+                        Result.result = static_cast<int16_t>(hit);
+                        send(SecondPlayer, &Result, sizeof(ResultOfBung), MSG_NOSIGNAL);
+
+			++ScoreOfSP;
+                }
+                else
+                {       
+                        Result.result = static_cast<int16_t>(not_hit);
+                        send(SecondPlayer, &Result, sizeof(ResultOfBung), MSG_NOSIGNAL);
+                }
 	}
 }
 
@@ -153,6 +249,7 @@ int main()
 	void* Null = NULL;
 
 	sleep(3);
+	srand(time(NULL));
 
 	pthread_t FirstThread, SecondThread, TimerThread;
 
