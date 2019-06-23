@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>580</width>
+    <width>710</width>
     <height>415</height>
    </rect>
   </property>
@@ -19,7 +19,7 @@
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>580</width>
+      <width>710</width>
       <height>415</height>
      </rect>
     </property>
@@ -52,7 +52,7 @@
    <widget class="QPushButton" name="Connection">
     <property name="geometry">
      <rect>
-      <x>260</x>
+      <x>300</x>
       <y>350</y>
       <width>101</width>
       <height>25</height>
@@ -68,7 +68,7 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>180</x>
+      <x>230</x>
       <y>310</y>
       <width>251</width>
       <height>25</height>
@@ -99,17 +99,93 @@
      <bool>false</bool>
     </property>
    </widget>
+   <widget class="QLabel" name="ScorePlayers">
+    <property name="geometry">
+     <rect>
+      <x>590</x>
+      <y>60</y>
+      <width>54</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Очки</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="Timer">
+    <property name="geometry">
+     <rect>
+      <x>590</x>
+      <y>10</y>
+      <width>91</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="Player1">
+    <property name="geometry">
+     <rect>
+      <x>590</x>
+      <y>80</y>
+      <width>111</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="Player2">
+    <property name="geometry">
+     <rect>
+      <x>590</x>
+      <y>100</y>
+      <width>111</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
    <zorder>Frame</zorder>
    <zorder>MainPicture</zorder>
    <zorder>Connection</zorder>
    <zorder>InputLine</zorder>
+   <zorder>ScorePlayers</zorder>
+   <zorder>Timer</zorder>
+   <zorder>Player1</zorder>
+   <zorder>Player2</zorder>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>580</width>
+     <width>710</width>
      <height>22</height>
     </rect>
    </property>

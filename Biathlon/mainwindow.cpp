@@ -1,8 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#define WidthOfFrame 580
-#define HeightOfFrame 415
+#define WidthOfFrame 710
+#define HeightOfFrame 430
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -10,13 +10,16 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    ui->MainPicture->setFixedSize(QSize(WidthOfFrame, HeightOfFrame));
     setFixedSize(QSize(WidthOfFrame, HeightOfFrame));
     ui->Frame->setFixedSize(QSize(WidthOfFrame, HeightOfFrame));
     ui->Frame->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     ui->Frame->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    ui->ScorePlayers->hide();
 
     scene = new QGraphicsScene;
     MyTimer = new QTimer;
+    Timer = new QTimer;
     MyTimer->setInterval(50);
 }
 
@@ -77,6 +80,22 @@ void MainWindow::SendFire(int16_t x, int16_t y)
     send(ClientSocket, &ShotForServer, sizeof(Shot), MSG_NOSIGNAL);
 }
 
+void MainWindow::TimerOfGame()
+{
+    --myTimer;
+    qDebug() << "Осталось " << myTimer;
+
+    if(myTimer >= 0)
+    {
+        ui->Timer->setText("Время: " + QString::number(myTimer));
+
+        if(myTimer == 0)
+        {
+            delete Timer;
+        }
+    }
+}
+
 void MainWindow::ReadFromServer()
 {
     int16_t buffer[3];
@@ -84,6 +103,8 @@ void MainWindow::ReadFromServer()
     if(recv(ClientSocket, &buffer, sizeof(int16_t), MSG_NOSIGNAL) > 0)
     {
        Msg_type type = static_cast<Msg_type>(buffer[0]);
+
+       qDebug() << "type = " << type;
 
        if(type == state_for_client)
        {
@@ -124,7 +145,7 @@ void MainWindow::ReadFromServer()
                QPixmap frame;
 
                frame.load(":/img/BattleArea.jpg");
-               frame = frame.scaled(WidthOfFrame, HeightOfFrame);
+               frame = frame.scaled(580, HeightOfFrame);
                scene->addPixmap(frame);
 
                AreaForShot* area = new AreaForShot;
@@ -132,32 +153,103 @@ void MainWindow::ReadFromServer()
                connect(area, &AreaForShot::fire, this, &MainWindow::SendFire);
                scene->addItem(area);
 
+               ui->Frame->setFixedSize(QSize(580, HeightOfFrame));
                ui->Frame->setScene(scene);
                ui->Frame->show();
 
+               connect(Timer, &QTimer::timeout, this, &MainWindow::TimerOfGame);
+               Timer->setInterval(1000);
+               Timer->start();
+
+               ui->Timer->setText("Время: 30");
+               ui->ScorePlayers->show();
+               ui->Player1->setText("Мои: 0");
+               ui->Player2->setText("Противника: 0");
            }
            else if(state == Win)
            {
+               QPixmap win;
+               win.load(":/img/Win.jpg");
+               win = win.scaled(WidthOfFrame, HeightOfFrame);
+
+               scene->clear();
+               scene->addPixmap(win);
+               ui->Frame->setScene(scene);
+               ui->Frame->setFixedSize(WidthOfFrame, HeightOfFrame);
+               ui->Frame->show();
+
+               ui->Timer->hide();
+               ui->ScorePlayers->hide();
+               ui->Player1->hide();
+               ui->Player2->hide();
+
+               delete MyTimer;
+
+               shutdown(ClientSocket, SHUT_RDWR);
+               ::close(ClientSocket);
+
                qDebug() << "Я выиграл";
            }
            else if(state == Lose)
-           {
+           {   
+               QPixmap lose;
+               lose.load(":/img/Lose.jpg");
+               lose = lose.scaled(WidthOfFrame, HeightOfFrame);
+
+               scene->clear();
+               scene->addPixmap(lose);
+               ui->Frame->setScene(scene);
+               ui->Frame->setFixedSize(WidthOfFrame, HeightOfFrame);
+               ui->Frame->show();
+
+               ui->Timer->hide();
+               ui->ScorePlayers->hide();
+               ui->Player1->hide();
+               ui->Player2->hide();
+
+               delete MyTimer;
+
+               shutdown(ClientSocket, SHUT_RDWR);
+               ::close(ClientSocket);
+
                qDebug() << "Блiн, проiграл";
            }
            else if(state == DeadHeat)
            {
+               QPixmap Draw;
+               Draw.load(":/img/DeadHeat.jpg");
+               Draw = Draw.scaled(WidthOfFrame, HeightOfFrame);
+
+               scene->clear();
+               scene->addPixmap(Draw);
+               ui->Frame->setScene(scene);
+               ui->Frame->setFixedSize(WidthOfFrame, HeightOfFrame);
+               ui->Frame->show();
+
+               ui->Timer->hide();
+               ui->ScorePlayers->hide();
+               ui->Player1->hide();
+               ui->Player2->hide();
+
+               delete MyTimer;
+
+               shutdown(ClientSocket, SHUT_RDWR);
+               ::close(ClientSocket);
+
                qDebug() << "Ничья";
            }
        }
        else if(type == result_of_shot)
        {
-           recv(ClientSocket, &buffer[1], sizeof(int16_t), MSG_NOSIGNAL);
+           recv(ClientSocket, &buffer[1], 2 * sizeof(int16_t), MSG_NOSIGNAL);
 
            ResultOfShot result = static_cast<ResultOfShot>(buffer[1]);
 
            if(result == hit)
            {
                qDebug() << "Я попал!";
+
+               ui->Player1->setText("Мои: " + QString::number(buffer[2]));
            }
            else if(result == not_hit)
            {
@@ -176,11 +268,16 @@ void MainWindow::ReadFromServer()
            QPixmap target;
 
            target.load(":/img/Target.jpg");
-           target = target.scaled(100, 100);
+           target = target.scaled(70, 70);
 
            Target = scene->addPixmap(target);
 
            Target->setPos(buffer[1], buffer[2]);
+       }
+       else if(type == score_of_enemy)
+       {
+           recv(ClientSocket, &buffer[1], sizeof(int16_t), MSG_NOSIGNAL);
+           ui->Player2->setText("Противника: " + QString::number(buffer[1]));
        }
     }
 }

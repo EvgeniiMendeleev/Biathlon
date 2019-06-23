@@ -6,5 +6,8 @@
         <file>BattleArea.jpg</file>
         <file>cursortarget.png</file>
         <file>Target.jpg</file>
+        <file>DeadHeat.jpg</file>
+        <file>Lose.jpg</file>
+        <file>Win.jpg</file>
     </qresource>
 </RCC>

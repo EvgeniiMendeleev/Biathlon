@@ -36,6 +36,12 @@ struct ResultOfBung
     int16_t result;
 };
 
+struct ScoreOfEnemy
+{
+    int16_t type;
+    int16_t Score;
+};
+
 struct Shot
 {
     int16_t PosX;
@@ -49,7 +55,7 @@ struct StateForClient
 };
 
 enum States {WaitingOfConnection, WaitingOfCombat, Win, Lose, Combat, DeadHeat};
-enum Msg_type {result_of_shot, state_for_client, coor_of_taget};
+enum Msg_type {result_of_shot, state_for_client, coor_of_taget, score_of_enemy};
 enum ResultOfShot {not_hit, hit};
 
 class MainWindow : public QMainWindow
@@ -66,6 +72,7 @@ private slots:
     void on_Connection_clicked();
     void SendFire(int16_t x, int16_t y);
     void ReadFromServer();
+    void TimerOfGame();
 
 private:
 
@@ -73,7 +80,9 @@ private:
     QGraphicsScene* scene;
     QGraphicsPixmapItem* Target;
     QTimer* MyTimer;
+    QTimer* Timer;
 
+    int myTimer = 30;
     int ClientSocket;
 };
 
