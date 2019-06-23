@@ -13,19 +13,26 @@
 
 #define TimeOfGame 30
 #define MaxX 480
-#define MaxY 315
-#define Radius 50
+#define MaxY 330
+#define Radius 35
 
 using namespace std;
 
 enum states {WaitingOfConnection, WaitingOfCombat, Win, Lose, Combat, DeadHeat};
-enum Msg_type {result_of_shot, state_for_client, coor_for_target};
+enum Msg_type {result_of_shot, state_for_client, coor_for_target, score_of_enemy};
 enum ResultOfShot {not_hit, hit};
 
 struct ResultOfBung
 {
 	int16_t type = static_cast<int16_t>(result_of_shot);
 	int16_t result;
+	int16_t ScoreOfPlayer;
+};
+
+struct ScoreOfEnemy
+{
+	int16_t type = static_cast<int16_t>(score_of_enemy);
+	int16_t Score;
 };
 
 struct Message
@@ -126,10 +133,15 @@ void* DataFromFirstClient(void* NullData)
 
 		if(sqrt(x2 + y2) < Radius)
 		{
+			++ScoreOfFP;
+			Result.ScoreOfPlayer = ScoreOfFP;
 			Result.result = static_cast<int16_t>(hit);
 			send(FirstPlayer, &Result, sizeof(ResultOfBung), MSG_NOSIGNAL);
 
-			++ScoreOfFP;
+			ScoreOfEnemy score;
+			score.Score = ScoreOfFP;
+			send(SecondPlayer, &score, sizeof(ScoreOfEnemy), MSG_NOSIGNAL);
+
 		}
 		else
 		{
@@ -171,10 +183,14 @@ void* DataFromSecondClient(void* NullData)
 
                 if(sqrt(x2 + y2) < Radius)
                 {
+			++ScoreOfSP;
                         Result.result = static_cast<int16_t>(hit);
+			Result.ScoreOfPlayer = ScoreOfSP;
                         send(SecondPlayer, &Result, sizeof(ResultOfBung), MSG_NOSIGNAL);
 
-			++ScoreOfSP;
+			ScoreOfEnemy score;
+			score.Score = ScoreOfSP;
+			send(FirstPlayer, &score, sizeof(ScoreOfEnemy), MSG_NOSIGNAL);
                 }
                 else
                 {       
